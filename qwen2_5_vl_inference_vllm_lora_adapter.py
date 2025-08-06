@@ -10,7 +10,7 @@ from vllm.lora.request import LoRARequest
 import os
 
 # MODEL_PATH = "./model_weight/aihub_data_v1_1_continual_crowdworks/qwen2vl_7B_lora/checkpoint_600_merged"
-MODEL_PATH = "Qwen/Qwen2-VL-7B-Instruct"
+MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
 
 llm = LLM(
     model=MODEL_PATH,
@@ -56,7 +56,9 @@ sampling_params = SamplingParams(
 
 lora_paths = {
     "v1_3": "./model_weight/aihub_data_v1_1/qwen2vl_7B_lora/llamafactory_2epoch",
-    "v1_4": "./model_weight/aihub_data_v1_1_crowdworks/qwen2vl_7B_lora/llamafactory_2epoch"
+    "v1_4": "./model_weight/aihub_data_v1_1_crowdworks/qwen2vl_7B_lora/llamafactory_2epoch",
+    "qwen2_5_vl_7B_lora": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_7B_lora/llamafactory_2epoch",
+    "qwen2_5_vl_3B_lora": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch"
 }
 
 # 단일 인자만 받는 경우: (adapter_name, adapter_id, lora_path)
@@ -65,7 +67,7 @@ lora_requests = {
     for i, (name, path) in enumerate(lora_paths.items())
 }
 
-input_dir = "./chart_test_v2_0_temp_check"
+input_dir = "../test_data/kor_docu_bench_chart/crop_images"
 # JSON 파일로 저장
 # output_file = "qwen2vl_7B_aihub_llamafactory_lora_epoch_3_vLLM_results.json"
 
@@ -80,7 +82,7 @@ inference_times = []
 
 # 결과 저장 디렉토리 생성
 # save_dir = "./qwen2vl_7B_aihub_data_v1_1_continual_crowdworks_10epoch_result_md/"
-save_dir = "./vllm_lora_adapter_inference"
+save_dir = "./qwen2_5_vl_3B_aihub_v1_1_crowdworks_4epoch_lora_adapter_result_md"
 os.makedirs(save_dir, exist_ok=True)
 
 for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
@@ -135,7 +137,7 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
         [llm_inputs],
         sampling_params=sampling_params,
         # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
-        lora_request=lora_requests["v1_4"]
+        lora_request=lora_requests["qwen2_5_vl_3B_lora"]
     )
     # else:
     #     outputs = llm.generate(

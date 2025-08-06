@@ -60,7 +60,7 @@ class UrlModel(BaseModel):
 app = FastAPI()
 
 # Qwen2-VL + LoRA 파인튜닝 + vLLM + AWQ INT4 변환 (X)
-MODEL_PATH = "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_7B_lora/llamafactory_2epoch_merged"
+MODEL_PATH = "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch_merged"
 
 # 모델 로드
 llm = LLM(

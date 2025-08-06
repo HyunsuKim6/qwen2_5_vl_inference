@@ -9,7 +9,7 @@ import json
 from vllm.lora.request import LoRARequest
 import os
 
-MODEL_PATH = "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch_merged"
+MODEL_PATH = "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_4epoch_merged"
 # MODEL_PATH = "Qwen/Qwen2-VL-7B-Instruct"
 
 llm = LLM(
@@ -27,7 +27,7 @@ llm = LLM(
 
 min_pixels = 256*28*28
 # max_pixels = 1280*28*28
-max_pixels = 262144
+max_pixels = 1000000
 
 processor = AutoProcessor.from_pretrained(
     MODEL_PATH,
@@ -72,7 +72,7 @@ results = []
 inference_times = []
 
 # 결과 저장 디렉토리 생성
-save_dir = "./qwen2_5_vl_3B_aihub_v1_1_crowdworks_4epoch_maxpx_262144_result_md/"
+save_dir = "./qwen2_5_vl_3B_aihub_v1_1_crowdworks_4epoch_maxpx_1M_result_md/"
 os.makedirs(save_dir, exist_ok=True)
                     
 for image_path in tqdm(image_paths, desc="Running inference"):
