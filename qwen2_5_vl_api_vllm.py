@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from transformers import AutoProcessor
 from vllm import LLM, SamplingParams
@@ -10,48 +10,19 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 import requests
 from typing import List
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-# def remove_trailing_repeated_rows(table_text, max_repeats=1):
-#     # 입력된 텍스트를 줄 단위로 분리
-#     lines = table_text.strip().split('\n')
-    
-#     if len(lines) < 3:
-#         return table_text  # 헤더와 구분선이 없으면 원본 반환
-    
-#     header = lines[0]
-#     separator = lines[1]
-#     data_rows = lines[2:]
-    
-#     # 헤더의 열 수를 기준으로 각 행을 정규화
-#     def normalize_row(row, num_columns):
-#         cells = [cell.strip() for cell in row.strip('|').split('|')]
-#         # 열 수가 부족하면 빈 문자열로 채움
-#         if len(cells) < num_columns:
-#             cells += [''] * (num_columns - len(cells))
-#         return '| ' + ' | '.join(cells) + ' |'
-    
-#     # 헤더 기준 열 수
-#     num_columns = len([cell.strip() for cell in header.strip('|').split('|')])
-    
-#     # 모든 데이터 행을 정규화
-#     normalized_data_rows = [normalize_row(row, num_columns) for row in data_rows]
-    
-#     # 뒤에서부터 반복되는 행을 제거
-#     unique_rows = []
-#     repeat_count = {}
-#     for row in reversed(normalized_data_rows):
-#         row_key = row.strip()
-#         if row_key in repeat_count:
-#             repeat_count[row_key] += 1
-#         else:
-#             repeat_count[row_key] = 1
-        
-#         if repeat_count[row_key] <= max_repeats:
-#             unique_rows.insert(0, row)
-    
-#     # 테이블을 다시 결합
-#     filtered_table = '\n'.join([header, separator] + unique_rows)
-#     return filtered_table
+security = HTTPBearer()
+
+# 실제 환경에서는 이 토큰을 환경 변수나 비밀 관리 시스템에서 가져오는 것을 권장합니다.
+VALID_TOKEN = "vision!@#"
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials.scheme != "Bearer" or credentials.credentials != VALID_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing authentication token",
+        )
 
 class UrlModel(BaseModel):
     url: str
@@ -93,6 +64,7 @@ sampling_params = SamplingParams(
 @app.post("/chart_rec_default")
 async def chart_rec_default(
     image: UploadFile = File(...),
+    token: HTTPAuthorizationCredentials = Depends(verify_token)
 ):
     # 이미지 판별
     if not image.content_type.startswith("image/"):

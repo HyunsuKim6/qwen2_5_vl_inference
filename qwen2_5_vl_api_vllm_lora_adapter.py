@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
 from transformers import AutoProcessor
 from vllm import LLM, SamplingParams
@@ -11,6 +11,19 @@ from pydantic import BaseModel, Field
 import requests
 from typing import List
 from vllm.lora.request import LoRARequest
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+security = HTTPBearer()
+
+# 실제 환경에서는 이 토큰을 환경 변수나 비밀 관리 시스템에서 가져오는 것을 권장합니다.
+VALID_TOKEN = "vision!@#"
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials.scheme != "Bearer" or credentials.credentials != VALID_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing authentication token",
+        )
 
 class UrlModel(BaseModel):
     url: str
@@ -62,10 +75,11 @@ lora_requests = {
 }
 
 # 기본 형태 API
-@app.post("/chart_rec_default")
+@app.post("/chart_diagram_rec_default")
 async def chart_rec_default(
     image: UploadFile = File(...),
-    content_class: str = Form(...)
+    content_class: str = Form(...),
+    token: HTTPAuthorizationCredentials = Depends(verify_token)
 ):
     allowed_classes = {"chart", "picture"}
     if content_class not in allowed_classes:
