@@ -22,11 +22,11 @@ llm = LLM(
     download_dir="./model_cache",
     # quantization="AWQ"
     enable_lora=True,
-    max_lora_rank=32
+    # max_lora_rank=64
 )
 
-min_pixels = 256*28*28
-max_pixels = 1280*28*28
+min_pixels = 50000
+max_pixels = 1000000
 processor = AutoProcessor.from_pretrained(
     MODEL_PATH,
     min_pixels=min_pixels,
@@ -66,7 +66,7 @@ lora_requests = {
     for i, (name, path) in enumerate(lora_paths.items())
 }
 
-input_dir = "../test_data/kor_docu_bench_chart/crop_images"
+input_dir = "../test_data/chart_test_v2_0/images"
 # JSON 파일로 저장
 # output_file = "qwen2vl_7B_aihub_llamafactory_lora_epoch_3_vLLM_results.json"
 
@@ -84,7 +84,7 @@ inference_times = []
 save_dir = "./multi_lora_inference_test_result_md"
 os.makedirs(save_dir, exist_ok=True)
 
-idx = 0
+# idx = 0
 for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
     # 홀수-짝수 인덱스에 따라 LoRA 어댑터 선택
     # lora_key = "v1_3" if idx % 2 == 0 else "v1_4"
@@ -98,8 +98,8 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
                 {
                     "type": "image",
                     "image": "file://" + image_path,
-                    "min_pixels": 256 * 28 * 28,
-                    "max_pixels": 1280 * 28 * 28,
+                    "min_pixels": min_pixels,
+                    "max_pixels": max_pixels,
                 },
                 {"type": "text", "text": "차트를 테이블로 변환해줘. 테이블만 출력해줘."},
             ],
@@ -130,21 +130,21 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
     # 시작 시간 측정
     start_time = time.time()
     
-    if idx % 2 == 0:
-        outputs = llm.generate(
-            [llm_inputs],
-            sampling_params=sampling_params,
-            # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
-            lora_request=lora_requests["chart_rec"]
-        )
-    else:
-       outputs = llm.generate(
-            [llm_inputs],
-            sampling_params=sampling_params,
-            # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
-            lora_request=lora_requests["diagram_rec"]
-       )
-    idx += 1
+    # if idx % 2 == 0:
+    outputs = llm.generate(
+        [llm_inputs],
+        sampling_params=sampling_params,
+        # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
+        lora_request=lora_requests["chart_rec"]
+    )
+    # else:
+    #    outputs = llm.generate(
+    #         [llm_inputs],
+    #         sampling_params=sampling_params,
+    #         # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
+    #         lora_request=lora_requests["diagram_rec"]
+    #    )
+    # idx += 1
                 
     generated_text = outputs[0].outputs[0].text
 

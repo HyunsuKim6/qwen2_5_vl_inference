@@ -76,7 +76,7 @@ lora_requests = {
 
 # 기본 형태 API
 @app.post("/chart_diagram_rec_default")
-async def chart_rec_default(
+async def chart_diagram_rec_default(
     image: UploadFile = File(...),
     content_class: str = Form(...),
     token: HTTPAuthorizationCredentials = Depends(verify_token)
@@ -102,8 +102,12 @@ async def chart_rec_default(
 
     if content_class == "chart":
         prompt_text = "차트를 테이블로 변환해줘. 테이블만 출력해줘."
+        min_pixels = 50000
+        max_pixels = 1000000
     elif content_class == "picture":
         prompt_text = "이 이미지에 대해 자세히 설명해 주세요."
+        min_pixels = 50000
+        max_pixels = 2000000
 
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
