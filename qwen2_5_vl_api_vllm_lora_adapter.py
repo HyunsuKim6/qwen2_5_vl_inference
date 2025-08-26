@@ -12,11 +12,6 @@ import requests
 from typing import List
 from vllm.lora.request import LoRARequest
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import re
-
-def shrink_pipes(output):
-    """연속된 '|'가 20개 이상이면 정확히 20개로 축소"""
-    return re.sub(r'\|{20,}', '|' * 20, output)
 
 security = HTTPBearer()
 
@@ -37,7 +32,8 @@ class UrlModel(BaseModel):
 app = FastAPI()
 
 # Qwen2-VL + LoRA 파인튜닝 + vLLM + AWQ INT4 변환 (X)
-MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
+# MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
+MODEL_PATH = "./model_weight/qwen2_5_vl_3B_original"
 
 # 모델 로드
 llm = LLM(
@@ -172,24 +168,12 @@ async def chart_diagram_rec_default(
             )
         end_time = time.time()
 
-    try:
-        if outputs[0].outputs[0].text:
-            generated_text = outputs[0].outputs[0].text
-        else:
-            generated_text = ""
-    except IndexError as e:
-        print(f"[IndexError] while accessing model outputs: {e}")
-        generated_text = ""
-    except AttributeError as e:
-        print(f"[AttributeError] while accessing model outputs: {e}")
-        generated_text = ""
-    
-    final_text = shrink_pipes(generated_text)
+    generated_text = outputs[0].outputs[0].text
     
     response = {
             "status": "succeeded",
             "analyzeResult": {
-                "content": final_text
+                "content": generated_text
             },
             # "inference_time": round(end_time - start_time, 2)
         }
