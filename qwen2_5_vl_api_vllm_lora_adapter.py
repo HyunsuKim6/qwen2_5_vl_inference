@@ -12,6 +12,11 @@ import requests
 from typing import List
 from vllm.lora.request import LoRARequest
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import re
+
+def shrink_pipes(output):
+    """연속된 '|'가 20개 이상이면 정확히 20개로 축소"""
+    return re.sub(r'\|{20,}', '|' * 20, output)
 
 security = HTTPBearer()
 
@@ -167,12 +172,24 @@ async def chart_diagram_rec_default(
             )
         end_time = time.time()
 
-    generated_text = outputs[0].outputs[0].text
-
+    try:
+        if outputs[0].outputs[0].text:
+            generated_text = outputs[0].outputs[0].text
+        else:
+            generated_text = ""
+    except IndexError as e:
+        print(f"[IndexError] while accessing model outputs: {e}")
+        generated_text = ""
+    except AttributeError as e:
+        print(f"[AttributeError] while accessing model outputs: {e}")
+        generated_text = ""
+    
+    final_text = shrink_pipes(generated_text)
+    
     response = {
             "status": "succeeded",
             "analyzeResult": {
-                "content": generated_text
+                "content": final_text
             },
             # "inference_time": round(end_time - start_time, 2)
         }
