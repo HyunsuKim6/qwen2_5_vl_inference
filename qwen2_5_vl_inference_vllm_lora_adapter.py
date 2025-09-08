@@ -9,20 +9,20 @@ import json
 from vllm.lora.request import LoRARequest
 import os
 
-# MODEL_PATH = "./model_weight/aihub_data_v1_1_continual_crowdworks/qwen2vl_7B_lora/checkpoint_600_merged"
-MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
+MODEL_PATH = "./model_weight/qwen2_5_vl_3B_AWQ_huggingface_download"
+# MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
 
 llm = LLM(
     model=MODEL_PATH,
     # limit_mm_per_prompt={"image": 10, "video": 10},
     limit_mm_per_prompt={"image": 1, "video": 0},
     # gpu_memory_utilization=0.95,
-    gpu_memory_utilization=0.95,
+    gpu_memory_utilization=0.55,
     max_model_len=16384,
     download_dir="./model_cache",
     # quantization="AWQ"
     enable_lora=True,
-    # max_lora_rank=64
+    max_lora_rank=32
 )
 
 min_pixels = 50000
@@ -56,7 +56,7 @@ sampling_params = SamplingParams(
 # )
 
 lora_paths = {
-    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch",
+    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_5epoch",
     "diagram_rec": "./model_weight/diagram_lora_adapter_3b"
 }
 
@@ -81,7 +81,7 @@ inference_times = []
 
 # 결과 저장 디렉토리 생성
 # save_dir = "./qwen2vl_7B_aihub_data_v1_1_continual_crowdworks_10epoch_result_md/"
-save_dir = "./multi_lora_inference_test_result_md"
+save_dir = "./qwen2_5_vl_3B_AWQ_aihub_v1_1_crowdworks_5epoch_maxpx_1M_result_md"
 os.makedirs(save_dir, exist_ok=True)
 
 # idx = 0
@@ -89,6 +89,15 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
     # 홀수-짝수 인덱스에 따라 LoRA 어댑터 선택
     # lora_key = "v1_3" if idx % 2 == 0 else "v1_4"
     # lora_request_select = lora_requests[lora_key]
+
+    # if idx % 2 == 0:
+    prompt_text = "차트를 테이블로 변환해줘. 테이블만 출력해줘."
+    min_pixels = 50000
+    max_pixels = 1000000
+    # else:
+    #     prompt_text = "이 이미지에 대해 자세히 설명해 주세요."
+    #     min_pixels = 50000
+    #     max_pixels = 2000000
     
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -101,7 +110,7 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
                     "min_pixels": min_pixels,
                     "max_pixels": max_pixels,
                 },
-                {"type": "text", "text": "차트를 테이블로 변환해줘. 테이블만 출력해줘."},
+                {"type": "text", "text": prompt_text},
             ],
         },
     ]
@@ -144,7 +153,6 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
     #         # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
     #         lora_request=lora_requests["diagram_rec"]
     #    )
-    # idx += 1
                 
     generated_text = outputs[0].outputs[0].text
 

@@ -56,14 +56,6 @@ processor = AutoProcessor.from_pretrained(
     cache_dir="./model_cache"
 )
 
-sampling_params = SamplingParams(
-    temperature=0.1,
-    top_p=0.001,
-    repetition_penalty=1.05,
-    max_tokens=512,
-    stop_token_ids=[],
-)
-
 lora_paths = {
     "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch",
     "diagram_rec": "./model_weight/diagram_lora_adapter_3b"
@@ -105,10 +97,27 @@ async def chart_diagram_rec_default(
         prompt_text = "차트를 테이블로 변환해줘. 테이블만 출력해줘."
         min_pixels = 50000
         max_pixels = 1000000
+        
+        sampling_params = SamplingParams(
+            temperature=0.1,
+            top_p=0.001,
+            repetition_penalty=1.05,
+            max_tokens=512,
+            stop_token_ids=[],
+        )
+        
     elif content_class == "picture":
         prompt_text = "이 이미지에 대해 자세히 설명해 주세요."
         min_pixels = 50000
         max_pixels = 2000000
+
+        sampling_params = SamplingParams(
+            temperature=0.1,
+            top_p=0.001,
+            repetition_penalty=1.05,
+            max_tokens=1024,
+            stop_token_ids=[],
+        )
 
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
