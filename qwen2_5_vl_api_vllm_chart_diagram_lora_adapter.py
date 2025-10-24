@@ -12,6 +12,7 @@ import requests
 from typing import List
 from vllm.lora.request import LoRARequest
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from diagram_util import remove_duplicates, filter_specific_languages
 
 security = HTTPBearer()
 
@@ -44,8 +45,7 @@ llm = LLM(
     download_dir="./model_cache",
     # quantization="AWQ"
     enable_lora=True,
-    max_lora_rank=32,
-    # quantization="bitsandbytes"
+    max_lora_rank=32
 )
 
 min_pixels = 50000
@@ -74,8 +74,7 @@ diagram_sampling_params = SamplingParams(
 )
 
 lora_paths = {
-    # "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_4epoch",
-    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_5epoch",
+    "chart_rec": "./model_weight/KT_ChartRec_v1.4.2_adapter",
     "diagram_rec": "./model_weight/diagram_lora_adapter_3b"
 }
 
@@ -163,6 +162,8 @@ async def chart_diagram_rec_default(
         "multi_modal_data": mm_data,
     }
 
+    generated_text = ""
+
     if content_class == "chart":
         # 모델 추론 및 시간 측정
         start_time = time.time()
@@ -170,6 +171,7 @@ async def chart_diagram_rec_default(
             lora_request=lora_requests["chart_rec"]
             )
         end_time = time.time()
+        generated_text = outputs[0].outputs[0].text
     elif content_class == "picture":
         # 모델 추론 및 시간 측정
         start_time = time.time()
@@ -177,8 +179,9 @@ async def chart_diagram_rec_default(
             lora_request=lora_requests["diagram_rec"]
             )
         end_time = time.time()
-
-    generated_text = outputs[0].outputs[0].text
+        generated_text = outputs[0].outputs[0].text
+        generated_text = remove_duplicates(generated_text)
+        generated_text = filter_specific_languages(generated_text)
     
     response = {
             "status": "succeeded",

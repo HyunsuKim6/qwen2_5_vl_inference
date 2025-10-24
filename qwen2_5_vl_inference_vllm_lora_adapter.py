@@ -8,8 +8,16 @@ import time
 import json
 from vllm.lora.request import LoRARequest
 import os
+# from vllm.model_executor.layers.quantization.bitsandbytes import BitsAndBytesConfig
 
-MODEL_PATH = "./model_weight/qwen2_5_vl_3B_AWQ_huggingface_download"
+# config = BitsAndBytesConfig(
+#     load_in_4bit=True,
+#     bnb_4bit_use_double_quant=True,        # double quantization 여부
+#     bnb_4bit_quant_type="nf4",              # 또는 다른 정밀도 타입
+#     bnb_4bit_compute_dtype="bf16",          # internal 연산 시 dtype
+# )
+
+MODEL_PATH = "./model_weight/qwen2_5_vl_3B_huggingface_download_bnb_4bit_fp4_nodq_bf16"
 # MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
 
 llm = LLM(
@@ -17,12 +25,14 @@ llm = LLM(
     # limit_mm_per_prompt={"image": 10, "video": 10},
     limit_mm_per_prompt={"image": 1, "video": 0},
     # gpu_memory_utilization=0.95,
-    gpu_memory_utilization=0.55,
+    gpu_memory_utilization=0.35,
     max_model_len=16384,
     download_dir="./model_cache",
     # quantization="AWQ"
     enable_lora=True,
-    max_lora_rank=32
+    max_lora_rank=32,
+    quantization="bitsandbytes",
+    # load_format="bitsandbytes",
 )
 
 min_pixels = 50000
@@ -36,10 +46,21 @@ processor = AutoProcessor.from_pretrained(
 
 print(processor)
 
+# sampling_params = SamplingParams(
+#     temperature=0.1,
+#     top_p=0.001,
+#     repetition_penalty=1.05,
+#     # repetition_penalty=1.2,
+#     # presence_penalty=1.5,
+#     max_tokens=512,
+#     stop_token_ids=[],
+# )
+
 sampling_params = SamplingParams(
-    temperature=0.1,
-    top_p=0.001,
-    repetition_penalty=1.05,
+    temperature=0.0,
+    top_p=1.0,
+    top_k=1,
+    repetition_penalty=1.01,
     # repetition_penalty=1.2,
     # presence_penalty=1.5,
     max_tokens=512,
@@ -55,8 +76,12 @@ sampling_params = SamplingParams(
 #     stop_token_ids=[],
 # )
 
+# for epoch_idx in range(8, 11):
+#     checkpoint_idx = 15000 * epoch_idx
+    
 lora_paths = {
-    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_5epoch",
+    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_qlora/fp4_nodq_bf16/checkpoint-105000",
+    # "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_5epoch",
     "diagram_rec": "./model_weight/diagram_lora_adapter_3b"
 }
 
@@ -65,6 +90,13 @@ lora_requests = {
     name: LoRARequest(name, i+1, path)
     for i, (name, path) in enumerate(lora_paths.items())
 }
+    
+    # lora_id = 10000 + epoch_idx
+    # lora_name = "chart_rec_" + str(epoch_idx)
+    
+    # lora_requests = {
+    #     lora_name: LoRARequest(lora_name, lora_id, f"./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_qlora/fp4_nodq_bf16/checkpoint-{checkpoint_idx}")
+    # }
 
 input_dir = "../test_data/chart_test_v2_0/images"
 # JSON 파일로 저장
@@ -81,7 +113,8 @@ inference_times = []
 
 # 결과 저장 디렉토리 생성
 # save_dir = "./qwen2vl_7B_aihub_data_v1_1_continual_crowdworks_10epoch_result_md/"
-save_dir = "./qwen2_5_vl_3B_AWQ_aihub_v1_1_crowdworks_5epoch_maxpx_1M_result_md"
+# save_dir = "./qwen2_5_vl_3B_bnb_4bit_fp4_nodq_bf16_aihub_v1_1_crowdworks_"+ str(epoch_idx) + "epoch_result_md"
+save_dir = "./memory_test"
 os.makedirs(save_dir, exist_ok=True)
 
 # idx = 0
@@ -145,6 +178,7 @@ for idx, image_path in enumerate(tqdm(image_paths, desc="Running inference")):
         sampling_params=sampling_params,
         # lora_request=LoRARequest("lora_adapter", 1, lora_adapter_path)
         lora_request=lora_requests["chart_rec"]
+        # lora_request=lora_requests[lora_name]
     )
     # else:
     #    outputs = llm.generate(
