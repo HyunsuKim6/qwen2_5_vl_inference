@@ -14,6 +14,21 @@ from vllm.lora.request import LoRARequest
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from diagram_util import remove_duplicates, filter_specific_languages
 
+import os
+import multiprocessing as mp
+
+# 1) 반드시 최상단에서 spawn 고정
+try:
+    mp.set_start_method("spawn", force=True)
+except RuntimeError:
+    pass
+
+# 2) vLLM에 명시적으로 spawn 사용 지시 (권장)
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+# 필요시 V1 엔진 유지 (기본이 1이지만 명시해도 무방)
+os.environ.setdefault("VLLM_USE_V1", "1")
+
+
 security = HTTPBearer()
 
 # 실제 환경에서는 이 토큰을 환경 변수나 비밀 관리 시스템에서 가져오는 것을 권장합니다.
@@ -36,17 +51,22 @@ app = FastAPI()
 # MODEL_PATH = "Qwen/Qwen2.5-VL-3B-Instruct"
 MODEL_PATH = "./model_weight/qwen2_5_vl_3B_huggingface_download"
 
-# 모델 로드
-llm = LLM(
-    model=MODEL_PATH,
-    limit_mm_per_prompt={"image": 1},
-    gpu_memory_utilization=0.95,
-    max_model_len=16384,
-    download_dir="./model_cache",
-    # quantization="AWQ"
-    enable_lora=True,
-    max_lora_rank=32
-)
+llm = None
+
+@app.on_event("startup")
+async def _startup():
+    global llm
+    if llm is None:
+        llm = LLM(
+            model="./model_weight/qwen2_5_vl_3B_huggingface_download",
+            download_dir="./model_cache",
+            max_model_len=16384,
+            gpu_memory_utilization=0.95,
+            limit_mm_per_prompt={"image": 1},
+            enable_lora=True,
+            max_lora_rank=32,
+            # 필요시 기타 인자
+        )
 
 min_pixels = 50000
 max_pixels = 1000000
@@ -74,7 +94,7 @@ diagram_sampling_params = SamplingParams(
 )
 
 lora_paths = {
-    "chart_rec": "./model_weight/KT_ChartRec_v1.4.2_adapter",
+    "chart_rec": "./model_weight/aihub_data_v1_1_crowdworks/qwen2_5_vl_3B_lora/llamafactory_maxpx_1M_5epoch",
     "diagram_rec": "./model_weight/diagram_lora_adapter_3b"
 }
 
