@@ -94,11 +94,11 @@ chart_sampling_params = SamplingParams(
 )
 
 diagram_sampling_params = SamplingParams(
-    temperature=0.1,
+    temperature=0.01,
     top_p=0.001,
-    repetition_penalty=1.05,
+    repetition_penalty=1.08,
     max_tokens=1024,
-    stop_token_ids=[],
+    stop=["###", "</s>", "\n- - -"]
 )
 
 chart_complexity_params = SamplingParams(
@@ -115,7 +115,7 @@ diagram_complexity_params = SamplingParams(
     temperature=0.01,
     top_p=0.001,
     repetition_penalty=1.08,
-    stop_token_ids=[],
+    stop=["###", "</s>", "\n- - -"]
 )
 
 lora_paths = {
