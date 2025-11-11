@@ -1,13 +1,13 @@
 import torch
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoTokenizer, AutoProcessor, BitsAndBytesConfig
 
-BASE_MODEL = "./model_weight/qwen2_5_vl_3B_huggingface_download"   # 원하는 기본 모델로 바꾸세요
-SAVE_DIR   = "./model_weight/qwen2_5_vl_3B_huggingface_download_bnb_4bit_nf4_dq_bf16"  # 저장 경로
+BASE_MODEL = "./model_weight/qwen2_5_vl_7B_huggingface_download"   # 원하는 기본 모델로 바꾸세요
+SAVE_DIR   = "./model_weight/qwen2_5_vl_7B_huggingface_download_bnb_4bit_fp4_nodq_bf16"  # 저장 경로
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,                     # 4bit 로드
-    bnb_4bit_use_double_quant=True,        # double quant (nested)
-    bnb_4bit_quant_type="nf4",             # "nf4" 또는 "fp4"
+    bnb_4bit_use_double_quant=False,        # double quant (nested)
+    bnb_4bit_quant_type="fp4",             # "nf4" 또는 "fp4"
     bnb_4bit_compute_dtype=torch.bfloat16  # 연산 dtype: torch.float16 / torch.bfloat16 권장
 )
 

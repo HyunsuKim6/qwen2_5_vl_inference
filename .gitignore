@@ -2,3 +2,4 @@ model_weight/*
 __pycache__/*
 model_cache/*
 */__pycache__/*
+archive_dir/*
